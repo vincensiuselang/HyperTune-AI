@@ -1,0 +1,5 @@
+{
+  "name": "HyperTune AI",
+  "description": "A minimalist, web-based SaaS for automatic machine learning hyperparameter tuning and script generation.",
+  "requestFramePermissions": []
+}
