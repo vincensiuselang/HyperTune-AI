@@ -1,4 +1,5 @@
 
+
 export enum ModelType {
   RANDOM_FOREST = 'RandomForest',
   XGBOOST = 'XGBoost',
@@ -65,4 +66,5 @@ export enum AppStep {
 export interface UserSession {
   accessCode: string;
   expiry: number; // timestamp
+  isAdmin?: boolean;
 }

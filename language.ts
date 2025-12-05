@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export type Language = 'en' | 'id';
@@ -105,6 +106,22 @@ export const TRANSLATIONS = {
     errorGeneric: "An unexpected error occurred during the process.",
     retry: "Retry Operation",
     goBack: "Return to Configuration",
+
+    // Access Gate
+    gateTitle: "Limit Reached",
+    gateSubtitle: "You have used your free trials. Enter access code to continue.",
+    enterCode: "Access Code",
+    unlock: "Unlock Platform",
+    verifying: "Verifying...",
+    invalidCode: "Invalid Access Code.",
+    poweredBy: "Powered by Gemini AI • Valid session: 24h",
+    adminWelcome: "Welcome back, Admin.",
+    
+    // Admin Panel
+    adminDashboard: "Admin Console",
+    generateCode: "Generate User Code",
+    enterPlatform: "Enter Platform",
+    newCodeLabel: "New Access Code:",
   },
   id: {
     // Layout
@@ -207,6 +224,22 @@ export const TRANSLATIONS = {
     errorGeneric: "Terjadi kesalahan yang tidak terduga selama proses.",
     retry: "Coba Lagi",
     goBack: "Kembali ke Konfigurasi",
+
+    // Access Gate
+    gateTitle: "Batas Terlampaui",
+    gateSubtitle: "Anda telah menggunakan percobaan gratis. Masukkan kode akses untuk melanjutkan.",
+    enterCode: "Kode Akses",
+    unlock: "Buka Platform",
+    verifying: "Memverifikasi...",
+    invalidCode: "Kode Akses Tidak Valid.",
+    poweredBy: "Didukung oleh Gemini AI • Sesi valid: 24h",
+    adminWelcome: "Selamat datang kembali, Admin.",
+
+    // Admin Panel
+    adminDashboard: "Konsol Admin",
+    generateCode: "Buat Kode User",
+    enterPlatform: "Masuk Platform",
+    newCodeLabel: "Kode Akses Baru:",
   }
 };
 
