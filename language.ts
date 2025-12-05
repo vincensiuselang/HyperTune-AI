@@ -116,12 +116,17 @@ export const TRANSLATIONS = {
     invalidCode: "Invalid Access Code.",
     poweredBy: "Powered by Gemini AI • Valid session: 24h",
     adminWelcome: "Welcome back, Admin.",
+    noCode: "Don't have an access code?",
+    contactAdmin: "Get one here",
     
     // Admin Panel
     adminDashboard: "Admin Console",
     generateCode: "Generate User Code",
     enterPlatform: "Enter Platform",
     newCodeLabel: "New Access Code:",
+    adminUserLabel: "User Name / ID",
+    adminDurationLabel: "Validity Duration",
+    days: "Days",
   },
   id: {
     // Layout
@@ -234,12 +239,17 @@ export const TRANSLATIONS = {
     invalidCode: "Kode Akses Tidak Valid.",
     poweredBy: "Didukung oleh Gemini AI • Sesi valid: 24h",
     adminWelcome: "Selamat datang kembali, Admin.",
+    noCode: "Belum punya kode akses?",
+    contactAdmin: "Dapatkan di sini",
 
     // Admin Panel
     adminDashboard: "Konsol Admin",
     generateCode: "Buat Kode User",
     enterPlatform: "Masuk Platform",
     newCodeLabel: "Kode Akses Baru:",
+    adminUserLabel: "Nama User / ID",
+    adminDurationLabel: "Durasi Aktif",
+    days: "Hari",
   }
 };
 

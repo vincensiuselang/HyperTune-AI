@@ -107,18 +107,23 @@ export const generateTrainingScript = async (
       }
     });
 
-    const text = response.text || "{}";
+    let text = response.text || "{}";
+    
+    // CLEANUP: Remove potential Markdown formatting (```json ... ```) which causes JSON.parse to fail
+    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
     let data;
     try {
         data = JSON.parse(text);
     } catch (parseError) {
-        console.error("JSON Parse failed:", text);
-        throw new Error("Failed to parse AI response. The model output was not valid JSON.");
+        console.error("JSON Parse failed. Raw text:", text);
+        // Throw a specific error so the catch block handles it nicely
+        throw new Error(`AI Response Malformed: ${parseError instanceof Error ? parseError.message : 'Invalid JSON'}`);
     }
 
     // Validate the response structure
     if (!data.script || !Array.isArray(data.logs)) {
-        throw new Error("Invalid AI response structure: Missing script or logs.");
+        throw new Error("Invalid AI response structure: Missing script or logs fields.");
     }
 
     return {
@@ -133,19 +138,25 @@ export const generateTrainingScript = async (
     console.error("Gemini Service Error:", error);
     
     // Handle specific API errors
-    let errorMessage = "Optimization failed due to an unexpected error.";
-    if (error.message.includes("429")) {
-        errorMessage = "Service is busy (Rate Limit). Please wait a moment and try again.";
-    } else if (error.message.includes("403")) {
-        errorMessage = "Access denied. Please check your API key or billing status.";
-    } else if (error.message.includes("SAFETY")) {
-        errorMessage = "The request was blocked by safety filters.";
+    let userMessage = "Optimization failed due to an unexpected error.";
+    let detailedError = error.message || "Unknown error";
+
+    if (detailedError.includes("429")) {
+        userMessage = "System is busy (Rate Limit Exceeded). Please wait a moment and try again.";
+    } else if (detailedError.includes("403") || detailedError.includes("401")) {
+        userMessage = "Authorization failed. Please check your API key or billing status.";
+    } else if (detailedError.includes("503") || detailedError.includes("500")) {
+        userMessage = "AI Service is temporarily unavailable. Please retry.";
+    } else if (detailedError.includes("SAFETY") || detailedError.includes("BLOCKED")) {
+        userMessage = "The request was blocked by safety filters. Please try a different dataset or parameters.";
+    } else if (detailedError.includes("Malformed") || detailedError.includes("JSON")) {
+        userMessage = "AI generated invalid output format. Please retry the operation.";
     }
 
     // Return an error state that the dashboard can display
     return {
-        script: `# Error: ${errorMessage}\n# Details: ${error.message}`,
-        logs: [`Error: ${errorMessage}`],
+        script: `# ERROR: ${userMessage}\n# Details: ${detailedError}\n# timestamp: ${new Date().toISOString()}`,
+        logs: [`Error: ${userMessage}`],
         bestParams: {},
         bestScore: 0,
         metric: "Error"
@@ -193,7 +204,11 @@ export const generateShapScript = async (
             contents: prompt,
         });
 
-        return response.text?.trim() || "# Failed to generate SHAP script.";
+        let text = response.text?.trim() || "";
+        // Clean markdown if present
+        text = text.replace(/```python/g, '').replace(/```/g, '').trim();
+
+        return text || "# Failed to generate SHAP script.";
     } catch (e) {
         console.error("SHAP Generation Error:", e);
         return "# Error generating SHAP script. Please try again.";

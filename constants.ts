@@ -198,7 +198,7 @@ export const DEFAULT_N_TRIALS = 30;
 export const DEFAULT_CV_FOLDS = 5;
 
 // Valid demo codes for the "SaaS" aspect
-export const ADMIN_CODE = "vintec";
+export const ADMIN_CODE = "kopihitamenak";
 export const VALID_ACCESS_CODES = ["DEMO-123", "HYPER-2025", ADMIN_CODE];
 export const SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 export const FREE_TRIAL_LIMIT = 2; // Number of free experiments before lock

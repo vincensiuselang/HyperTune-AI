@@ -19,6 +19,8 @@ const AccessGate: React.FC<AccessGateProps> = ({ onAccessGranted }) => {
   // Admin State
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [generatedCode, setGeneratedCode] = useState('');
+  const [adminUserName, setAdminUserName] = useState('');
+  const [adminDurationDays, setAdminDurationDays] = useState('1'); // Default 1 day
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +31,7 @@ const AccessGate: React.FC<AccessGateProps> = ({ onAccessGranted }) => {
     setTimeout(() => {
       const trimmedCode = code.trim();
       
-      // Check hardcoded constants AND local storage generated codes
+      // 1. Check if it is valid (Constants OR LocalStorage)
       const storedCodes = JSON.parse(localStorage.getItem('ht_custom_codes') || '[]');
       const isValid = VALID_ACCESS_CODES.includes(trimmedCode) || storedCodes.includes(trimmedCode);
 
@@ -43,7 +45,16 @@ const AccessGate: React.FC<AccessGateProps> = ({ onAccessGranted }) => {
              return; // Don't login immediately, show dashboard
         }
 
-        loginUser(trimmedCode, false);
+        // 2. Determine Duration
+        // Check if there is specific metadata for this code
+        const codeMetadata = JSON.parse(localStorage.getItem('ht_code_metadata') || '{}');
+        let duration = SESSION_DURATION_MS; // Default 24h
+        
+        if (codeMetadata[trimmedCode]) {
+            duration = codeMetadata[trimmedCode];
+        }
+
+        loginUser(trimmedCode, false, duration);
 
       } else {
         setError(t.invalidCode);
@@ -52,31 +63,46 @@ const AccessGate: React.FC<AccessGateProps> = ({ onAccessGranted }) => {
     }, 800);
   };
 
-  const loginUser = (accessCode: string, isAdmin: boolean) => {
+  const loginUser = (accessCode: string, isAdmin: boolean, duration: number = SESSION_DURATION_MS) => {
     const session: UserSession = {
       accessCode: accessCode,
-      expiry: Date.now() + SESSION_DURATION_MS,
+      expiry: Date.now() + duration,
       isAdmin: isAdmin
     };
     onAccessGranted(session);
   };
 
   const generateNewCode = () => {
-      // Generate format "USER-XXXX"
+      if (!adminUserName.trim()) {
+          setError("User name is required");
+          return;
+      }
+      setError('');
+
+      // Generate format "NAME-XXXX"
       const randomPart = Math.floor(1000 + Math.random() * 9000);
-      const newCode = `USER-${randomPart}`;
+      const cleanName = adminUserName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+      const newCode = `${cleanName}-${randomPart}`;
       
-      // Save to local storage
+      // Calculate duration in MS
+      const days = parseInt(adminDurationDays);
+      const durationMs = days * 24 * 60 * 60 * 1000;
+
+      // Save valid code list
       const storedCodes = JSON.parse(localStorage.getItem('ht_custom_codes') || '[]');
       storedCodes.push(newCode);
       localStorage.setItem('ht_custom_codes', JSON.stringify(storedCodes));
       
+      // Save metadata (duration)
+      const metadata = JSON.parse(localStorage.getItem('ht_code_metadata') || '{}');
+      metadata[newCode] = durationMs;
+      localStorage.setItem('ht_code_metadata', JSON.stringify(metadata));
+
       setGeneratedCode(newCode);
   };
 
   const copyCode = () => {
       navigator.clipboard.writeText(generatedCode);
-      // Visual feedback handled by button state ideally, keeping it simple here
   };
 
   return (
@@ -96,21 +122,47 @@ const AccessGate: React.FC<AccessGateProps> = ({ onAccessGranted }) => {
         {/* ADMIN DASHBOARD VIEW */}
         {isAdminMode ? (
             <div className="space-y-6 mt-6">
-                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 text-center">
-                    <p className="text-sm text-slate-500 mb-4">Generate access codes for new users.</p>
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 text-left">
+                    <p className="text-sm text-slate-500 mb-4 text-center">Generate access codes for new users.</p>
                     
+                    {/* Admin Inputs */}
+                    <div className="space-y-3 mb-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-400 mb-1">{t.adminUserLabel}</label>
+                            <input 
+                                type="text" 
+                                value={adminUserName}
+                                onChange={(e) => setAdminUserName(e.target.value)}
+                                placeholder="e.g. Vintec"
+                                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-purple-500 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-400 mb-1">{t.adminDurationLabel}</label>
+                            <select 
+                                value={adminDurationDays}
+                                onChange={(e) => setAdminDurationDays(e.target.value)}
+                                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-purple-500 outline-none"
+                            >
+                                <option value="1">1 {t.days}</option>
+                                <option value="3">3 {t.days}</option>
+                                <option value="7">7 {t.days}</option>
+                                <option value="30">30 {t.days}</option>
+                                <option value="365">1 Year</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
+
                     {generatedCode ? (
-                        <div className="bg-slate-900 p-3 rounded-lg border border-purple-500/30 mb-4 flex items-center justify-between">
-                            <code className="text-xl font-mono text-purple-400 font-bold">{generatedCode}</code>
-                            <button onClick={copyCode} className="text-xs bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded">
+                        <div className="bg-slate-900 p-3 rounded-lg border border-purple-500/30 mb-4 flex items-center justify-between animate-fade-in">
+                            <code className="text-xl font-mono text-purple-400 font-bold tracking-wider">{generatedCode}</code>
+                            <button onClick={copyCode} className="text-xs bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded transition-colors">
                                 {t.copy}
                             </button>
                         </div>
-                    ) : (
-                         <div className="h-14 flex items-center justify-center text-slate-700 text-xs italic">
-                            No code generated yet
-                         </div>
-                    )}
+                    ) : null}
 
                     <button
                         onClick={generateNewCode}
@@ -131,6 +183,7 @@ const AccessGate: React.FC<AccessGateProps> = ({ onAccessGranted }) => {
             </div>
         ) : (
             /* STANDARD LOGIN VIEW */
+            <>
             <form onSubmit={handleLogin} className="space-y-6">
             <div>
                 <label htmlFor="code" className="block text-sm font-medium text-slate-300 mb-2">
@@ -142,7 +195,6 @@ const AccessGate: React.FC<AccessGateProps> = ({ onAccessGranted }) => {
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-slate-600 transition-all outline-none"
-                // placeholder="Code"
                 autoComplete="off"
                 />
             </div>
@@ -174,8 +226,7 @@ const AccessGate: React.FC<AccessGateProps> = ({ onAccessGranted }) => {
                 <span className="flex items-center justify-center">
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     {t.verifying}
                 </span>
                 ) : (
@@ -183,9 +234,23 @@ const AccessGate: React.FC<AccessGateProps> = ({ onAccessGranted }) => {
                 )}
             </button>
             </form>
+            
+            {/* Contact Admin Link */}
+            <div className="mt-6 text-center text-sm text-slate-500">
+                <span>{t.noCode} </span>
+                <a 
+                    href="https://wa.link/xuiyx6" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-cyan-400 hover:text-cyan-300 font-medium hover:underline transition-colors"
+                >
+                    {t.contactAdmin}
+                </a>
+            </div>
+            </>
         )}
 
-        <div className="mt-6 text-center text-xs text-slate-500">
+        <div className="mt-6 text-center text-xs text-slate-600 border-t border-slate-800 pt-4">
           {t.poweredBy}
         </div>
       </div>
