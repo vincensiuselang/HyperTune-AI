@@ -13,7 +13,8 @@ interface ResultsViewProps {
 
 const ResultsView: React.FC<ResultsViewProps> = ({ result, dataset, config, onReset }) => {
   const { t } = useLanguage();
-  const [isCodeOpen, setIsCodeOpen] = useState(true);
+  const [isCodeOpen, setIsCodeOpen] = useState(false);
+  const [isLogsOpen, setIsLogsOpen] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   
   // SHAP State
@@ -226,6 +227,40 @@ predictions = model.predict(new_data)
             <pre className="text-sm font-mono text-slate-300 p-6 leading-relaxed bg-[#0B1120]">
                 <code>{result.pythonScript}</code>
             </pre>
+            </div>
+        </div>
+      </div>
+
+       {/* Execution Logs (Dropdown) */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl mb-8 transition-all duration-300">
+        <div 
+            className="flex items-center justify-between px-6 py-4 bg-slate-950 border-b border-slate-800 cursor-pointer hover:bg-slate-900/80 transition-colors select-none"
+            onClick={() => setIsLogsOpen(!isLogsOpen)}
+        >
+          <div className="flex items-center space-x-3">
+            <div className={`w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 transition-all duration-300 ${isLogsOpen ? 'bg-cyan-900/20 text-cyan-400 border-cyan-900/30' : ''}`}>
+                 <svg className={`w-4 h-4 transition-transform duration-300 ${isLogsOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                 </svg>
+            </div>
+            <span className={`text-sm font-bold transition-colors ${isLogsOpen ? 'text-white' : 'text-slate-400'}`}>
+                {t.execLogs}
+            </span>
+          </div>
+          <span className="text-xs text-slate-500">
+             {isLogsOpen ? t.clickCollapse : t.clickExpand}
+          </span>
+        </div>
+        
+        <div className={`transition-all duration-500 ease-in-out ${isLogsOpen ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className="p-0 overflow-x-auto custom-scrollbar bg-black">
+                <div className="p-6 font-mono text-xs sm:text-sm space-y-1">
+                    {result.executionLog.map((log, i) => (
+                        <div key={i} className={`${log.toLowerCase().includes('error') ? 'text-red-400' : log.includes('best') || log.includes('Best') ? 'text-green-400' : 'text-slate-300'}`}>
+                            {log}
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
       </div>

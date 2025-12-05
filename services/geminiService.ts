@@ -39,7 +39,7 @@ export const generateTrainingScript = async (
       
       TASK:
       1. Write a production-ready Python script for Hyperparameter Tuning.
-      2. SIMULATE execution and generate brief logs.
+      2. SIMULATE execution and generate logs.
 
       CONTEXT:
       - Model: ${config.modelType}
@@ -53,7 +53,7 @@ export const generateTrainingScript = async (
 
       REQUIREMENTS:
       - Load 'dataset.csv' via pandas.
-      - PREPROCESSING: Handle missing values (SimpleImputer) & encode categoricals (OneHot/LabelEncoder). Drop high-cardinality IDs.
+      - PREPROCESSING: Handle missing values (SimpleImputer) & encode categoricals (OneHot/LabelEncoder).
       
       - MODEL SELECTION & PARAMETERS (Strict adherence):
           * GradientBoosting: Use sklearn.ensemble.GradientBoostingClassifier/Regressor. Prioritize 'n_estimators', 'learning_rate', 'max_depth', 'subsample', 'max_features'.
@@ -69,33 +69,30 @@ export const generateTrainingScript = async (
           * KNN: sklearn.neighbors.KNeighborsClassifier/Regressor
           * LogisticRegression: sklearn.linear_model.LogisticRegression
       
-      - TUNING ENGINE SELECTION:
-          * If method is 'Grid Search': Use sklearn.model_selection.GridSearchCV.
-          * If method is 'Random Search': Use sklearn.model_selection.RandomizedSearchCV OR optuna.samplers.RandomSampler.
-          * If method is 'Bayesian Optimization (Optuna)': Use optuna with TPESampler.
-          * If method is 'Hyperband': Use optuna with HyperbandPruner.
+      - TUNING ENGINE:
+          * 'Grid Search' -> sklearn.model_selection.GridSearchCV
+          * 'Random Search' -> sklearn.model_selection.RandomizedSearchCV
+          * 'Bayesian (Optuna)' -> optuna with TPESampler
+          * 'Hyperband' -> optuna with HyperbandPruner
 
-      - HYPERPARAMETERS (VALIDATION REQUIRED):
-          * You are the validation engine. Check the provided 'Hyperparams' string.
-          * IF MALFORMED or INVALID for ${config.modelType} (e.g., 'n_estimators' for LinearRegression, syntax errors):
-            - Output script: Start EXACTLY with "# Error: Invalid Hyperparameter Configuration" followed by comments explaining the specific error.
-            - Output logs: ["Error: Hyperparameter validation failed.", "<Specific Reason for failure>"]
-            - DO NOT generate a working script if validation fails.
-          * IF VALID:
-            - Parse and use the provided search space.
-            - Fallback to sensible defaults ONLY if the string is empty (not if it is invalid).
+      - HYPERPARAM VALIDATION:
+          * Check provided 'Hyperparams'.
+          * IF MALFORMED/INVALID for ${config.modelType}:
+            - Script must start with "# Error: Invalid Hyperparameter Configuration".
+            - Logs: ["Error: Hyperparameter validation failed.", "<Specific Reason>"]
+            - STOP generation.
+          * IF VALID: Use search space.
 
-      - EXECUTION:
-          * Use ${config.cvFolds}-fold CV.
-          * Run ${config.nTrials} trials.
-          * Retrain on full data.
-          * Save to 'model.pkl' via joblib.
-      - OUTPUT: Return ONLY raw code in 'script'. NO comments/docstrings to save space/time.
+      - EXECUTION SPECS:
+          * ${config.cvFolds}-fold CV.
+          * ${config.nTrials} trials.
+          * Save to 'model.pkl'.
+      - OUTPUT: Raw python code. NO comments/docstrings.
 
       OUTPUT FORMAT (JSON ONLY):
       {
-        "script": "string (raw python code, no comments)",
-        "logs": ["string", ... (Provide 3-5 concise lines: preprocessing, 1 trial example, and result)],
+        "script": "string (raw python code, minimal comments)",
+        "logs": ["string", ... (Max 3 concise lines: Preprocessing -> Tuning -> Result)],
         "best_params": { "param_name": value, ... },
         "best_score": number (0.0 to 1.0),
         "metric": "string (e.g. Accuracy, RMSE)"
@@ -169,28 +166,26 @@ export const generateShapScript = async (
         
         const prompt = `
             Act as a ML Engineer.
-            Write a Python script to visualize model explainability using SHAP (SHapley Additive exPlanations).
+            Write a Python script to visualize model explainability using SHAP.
             
             CONTEXT:
             - Dataset columns: [${columnsStr}]
             - Target: "${config.targetColumn}"
             - Model Type: ${config.modelType}
-            - Files present: 'model.pkl' (trained model), 'dataset.csv' (data)
+            - Files: 'model.pkl', 'dataset.csv'
 
             REQUIREMENTS:
-            1. Include comment: "# Requires: pip install shap matplotlib"
+            1. Comment: "# Requires: pip install shap matplotlib"
             2. Import pandas, shap, joblib, matplotlib.pyplot.
             3. Load 'model.pkl' and 'dataset.csv'.
-            4. Preprocess the data EXACTLY as a standard pipeline would (drop target, encode categoricals if needed) to match the model input.
-            5. Determine the correct SHAP explainer:
-               - If Model is Tree-based (RandomForest, XGBoost, LightGBM, CatBoost, DecisionTree, GradientBoosting, ExtraTrees, AdaBoost): Use shap.TreeExplainer.
-               - If Model is Linear (LinearRegression, LogisticRegression, SVM linear): Use shap.LinearExplainer.
-               - Otherwise (KNN, SVM rbf): Use shap.KernelExplainer (use a small background sample like 50 rows).
-            6. Calculate SHAP values for the first 100 rows (or all if <100).
-            7. Generate two plots code (but don't show, just print "Plot generated"):
-               - shap.summary_plot
-               - shap.dependence_plot (for the most important feature)
-            8. Output ONLY the raw Python code. No markdown formatting.
+            4. Preprocess data EXACTLY matching model input.
+            5. Select explainer:
+               - Tree-based: shap.TreeExplainer
+               - Linear: shap.LinearExplainer
+               - Others: shap.KernelExplainer
+            6. Calculate SHAP values (100 rows).
+            7. Generate shap.summary_plot and shap.dependence_plot.
+            8. Output ONLY raw Python code.
         `;
 
         const response = await ai.models.generateContent({
@@ -212,11 +207,11 @@ export const analyzeDataset = async (dataset: DatasetPreview): Promise<string> =
     try {
         const ai = getClient();
         const prompt = `
-          Analyze this dataset schema briefly:
+          Analyze dataset schema:
           Columns: ${dataset.columns.join(', ')}
-          Sample Data: ${JSON.stringify(dataset.sampleData.slice(0, 2))}
+          Sample: ${JSON.stringify(dataset.sampleData.slice(0, 2))}
           
-          Suggest 1 recommended model type (e.g., "Random Forest for Classification" or "XGBoost for Regression") and explain why in 1 short sentence.
+          Suggest 1 recommended model type and explain why in 1 short sentence.
         `;
 
         const response = await ai.models.generateContent({

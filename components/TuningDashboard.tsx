@@ -54,10 +54,10 @@ const TuningDashboard: React.FC<TuningDashboardProps> = ({ config, dataset, onCo
         startupInterval = setInterval(() => {
             if (startupIndex < STARTUP_LOGS.length) {
                 setLogs(prev => [...prev, `> ${STARTUP_LOGS[startupIndex]}`]);
-                setProgress(prev => Math.min(prev + 5, 40)); // Cap at 40% during startup
+                setProgress(prev => Math.min(prev + 8, 50)); // Cap at 50% during startup, faster increments
                 startupIndex++;
             }
-        }, 200); // Faster startup logs (200ms)
+        }, 80); // Ultra-fast startup logs (80ms)
 
         try {
             // Call API (This can take 2-5 seconds)
@@ -76,19 +76,19 @@ const TuningDashboard: React.FC<TuningDashboardProps> = ({ config, dataset, onCo
             setLogs(prev => [...prev, `> ${t.optSuccess}`, `> ${t.startTrials}`]);
             
             // Jump progress to indicate phase change
-            setProgress(prev => Math.max(prev, 45));
+            setProgress(prev => Math.max(prev, 55));
 
             const totalLogs = result.logs.length;
             let currentLogIndex = 0;
             
-            // Play back the AI logs very quickly (20ms) to feel "instant"
+            // Play back the AI logs instantly (5ms)
             simulationInterval = setInterval(() => {
                 if (currentLogIndex < totalLogs) {
                     const log = result.logs[currentLogIndex];
                     setLogs(prev => [...prev, `> ${log}`]);
                     
-                    // Map remaining progress (45% -> 95%)
-                    const logProgress = 45 + ((currentLogIndex + 1) / totalLogs) * 50;
+                    // Map remaining progress (55% -> 98%)
+                    const logProgress = 55 + ((currentLogIndex + 1) / totalLogs) * 43;
                     setProgress(Math.min(logProgress, 98));
                     
                     currentLogIndex++;
@@ -106,9 +106,9 @@ const TuningDashboard: React.FC<TuningDashboardProps> = ({ config, dataset, onCo
                             pythonScript: result.script,
                             executionLog: [...logs, ...result.logs] 
                         });
-                    }, 500);
+                    }, 300); // Reduce final wait to 300ms
                 }
-            }, 20); // SUPER FAST: 20ms per line
+            }, 5); // HYPER SPEED: 5ms per line
 
         } catch (e: any) {
             clearInterval(startupInterval);
@@ -132,7 +132,7 @@ const TuningDashboard: React.FC<TuningDashboardProps> = ({ config, dataset, onCo
       {/* Progress Bar */}
       <div className="w-full bg-slate-800 rounded-full h-4 mb-8 overflow-hidden relative">
         <div 
-          className="bg-cyan-500 h-full transition-all duration-100 ease-out shadow-[0_0_10px_rgba(6,182,212,0.7)]"
+          className="bg-cyan-500 h-full transition-all duration-75 ease-out shadow-[0_0_10px_rgba(6,182,212,0.7)]"
           style={{ width: `${progress}%` }}
         ></div>
         {/* Shimmer effect */}

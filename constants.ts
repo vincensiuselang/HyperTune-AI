@@ -333,6 +333,9 @@ bagging_temperature: [0, 1]
 border_count: [32, 64, 128]`
   },
   [ModelType.GRADIENT_BOOSTING]: {
+    "Default": `n_estimators: [100]
+learning_rate: [0.1]
+max_depth: [3]`,
     "Fast": `n_estimators: [50]
 learning_rate: [0.1]
 max_depth: [3]`,
@@ -349,6 +352,16 @@ learning_rate: [0.05]
 max_depth: [3]
 min_samples_leaf: [5, 10]
 subsample: [0.7, 0.8]`,
+    "Conservative": `n_estimators: [100, 200]
+learning_rate: [0.01, 0.05]
+max_depth: [2, 3]
+min_samples_leaf: [5, 10]
+subsample: [0.8]`,
+    "Aggressive": `n_estimators: [200, 500]
+learning_rate: [0.1, 0.2]
+max_depth: [5, 8, 10]
+min_samples_split: [2]
+subsample: [0.7, 0.9]`,
     "High Accuracy": `n_estimators: [200, 500]
 learning_rate: [0.01, 0.05, 0.1]
 max_depth: [3, 5, 8, 10]
@@ -426,6 +439,9 @@ learning_rate: [0.01, 0.1, 0.5, 1.0]
 algorithm: ['SAMME.R', 'SAMME']`
   },
   [ModelType.DECISION_TREE]: {
+    "Default": `max_depth: [None]
+min_samples_split: [2]
+criterion: ['gini']`,
     "Fast": `max_depth: [5]
 min_samples_split: [2]`,
     "Standard": `max_depth: [None, 10]
@@ -436,6 +452,13 @@ min_samples_leaf: [10, 20, 50]`,
     "Balanced": `max_depth: [None, 10, 20]
 min_samples_split: [2, 5, 10]
 min_samples_leaf: [1, 2, 4]`,
+    "Conservative": `max_depth: [3, 4, 5]
+min_samples_leaf: [10, 20]
+min_samples_split: [10, 20]`,
+    "Aggressive": `max_depth: [20, 50, None]
+min_samples_split: [2]
+min_samples_leaf: [1]
+criterion: ['gini', 'entropy']`,
     "High Accuracy": `max_depth: [None, 10, 20, 30, 50]
 min_samples_split: [2, 5, 10]
 min_samples_leaf: [1, 2, 4]
@@ -444,10 +467,16 @@ max_features: ['sqrt', 'log2', None]
 ccp_alpha: [0.0, 0.005, 0.01]`
   },
   [ModelType.LINEAR_REGRESSION]: {
+    "Default": `fit_intercept: [True]`,
     "Fast": `fit_intercept: [True]`,
     "Standard": `fit_intercept: [True, False]`,
     "Balanced": `fit_intercept: [True, False]
 positive: [False]`,
+    "Conservative": `fit_intercept: [True]
+positive: [False]`,
+    "Aggressive": `fit_intercept: [True, False]
+positive: [True, False]
+copy_X: [True, False]`,
     "Non-Negative": `fit_intercept: [True]
 positive: [True]`,
     "High Accuracy": `fit_intercept: [True, False]
